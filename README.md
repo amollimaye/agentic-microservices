@@ -62,6 +62,38 @@ What `start.bat` does:
 * waits for the three deployments to become ready
 * prints pod, service, and ingress status
 
+## Steps To Start Application
+
+1. Open a terminal in the repository root:
+
+```powershell
+cd C:\git\microservices-ecommerce-2
+```
+
+2. Start Docker Desktop and confirm Kubernetes is enabled.
+
+3. Run the startup script:
+
+```powershell
+start.bat
+```
+
+4. Wait until the script finishes and shows the pod and service status.
+
+5. Open the application endpoint:
+
+```text
+http://localhost:8090/ecommerce-service/ecommerceProducts
+```
+
+6. If needed, check logs:
+
+```powershell
+kubectl logs -n ecommerce deploy/product
+kubectl logs -n ecommerce deploy/images
+kubectl logs -n ecommerce deploy/ecommerce
+```
+
 ## Services
 
 The application runs as three services inside Kubernetes:

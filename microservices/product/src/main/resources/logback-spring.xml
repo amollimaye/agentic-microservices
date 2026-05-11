@@ -1,0 +1,29 @@
+<configuration>
+    <springProperty scope="context" name="serviceName" source="spring.application.name"/>
+
+    <appender name="JSON_STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <timestamp>
+                    <fieldName>timestamp</fieldName>
+                </timestamp>
+                <pattern>
+                    <pattern>
+                        {
+                        "service":"${serviceName:-unknown}",
+                        "level":"%level",
+                        "correlationId":"%mdc{correlationId}",
+                        "thread":"%thread",
+                        "logger":"%logger",
+                        "message":"%message"
+                        }
+                    </pattern>
+                </pattern>
+            </providers>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="JSON_STDOUT"/>
+    </root>
+</configuration>
