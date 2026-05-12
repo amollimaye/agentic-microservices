@@ -1,109 +1,45 @@
-You are working inside the existing GitHub repository:
-
+Repository:
 https://github.com/amollimaye/agentic-microservices
 
-You MUST first study:
-
-- Existing microservices structure
-- Kubernetes manifests
+Must study first:
+- Existing microservice structure
+- K8s manifests
 - Docker setup
 - Shared conventions
 - Existing agent services
 - Build conventions
 - Package naming
-- YAML organization
-- Config management
-- Logging style
-- Any shared libraries/utilities
-- Existing MCP patterns if present
+- Existing MCP patterns
+- coding-agent-reference.md
 
-Also study:
-
+Reference:
 https://github.com/amollimaye/agentic-microservices/blob/master/coding-agent-reference.md
 
-You MUST follow the conventions defined there exactly.
+Follow repository conventions exactly.
 
---------------------------------------------------
+==================================================
 GOAL
---------------------------------------------------
+==================================================
 
-Create a new Spring Boot microservice named:
+Create a new Spring Boot microservice:
 
 observability-agent
 
-This service is BOTH:
+This service is:
+1. Spring Boot REST service
+2. MCP server
 
-1. A normal Spring Boot REST microservice
-2. An MCP server
+It must integrate into the same microservices + Kubernetes ecosystem already used in repository.
 
-It becomes part of the same microservices ecosystem already present in the repository.
+Avoid overengineering.
 
-DO NOT redesign architecture.
+Reuse existing repo patterns.
 
-DO NOT introduce new frameworks unless absolutely required.
-
-DO NOT overengineer.
-
-Reuse existing patterns from repository.
-
---------------------------------------------------
-HIGH LEVEL FUNCTIONAL REQUIREMENTS
---------------------------------------------------
-
-The service provides observability APIs and MCP tools for:
-
-1. Logs by request ID
-2. Logs by service + time range
-3. Error logs by service + time range
-4. Heap size metrics by service + time range
-5. Thread count metrics by service + time range
-6. List of services for which observability data is available
-
---------------------------------------------------
-IMPORTANT ARCHITECTURE REQUIREMENTS
---------------------------------------------------
-
-1. Same Infrastructure Style
-
-The new service MUST use:
-
-- Same Gradle/Maven style as repo
-- Same Docker conventions
-- Same Kubernetes conventions
-- Same namespace conventions
-- Same ingress/service/deployment style
-- Same application.yml style
-- Same logging approach
-- Same actuator usage style
-- Same health check style
-
-Do NOT invent new deployment architecture.
-
---------------------------------------------------
-DATA SOURCE ASSUMPTIONS
---------------------------------------------------
-
-Assume observability data already exists in:
-
-- Loki (for logs)
-- Prometheus (for JVM metrics)
-
-The new service acts as:
-
-- Aggregation layer
-- Query layer
-- MCP exposure layer
-
-DO NOT implement custom log storage.
-
-DO NOT implement custom metrics storage.
-
---------------------------------------------------
-TECHNOLOGIES
---------------------------------------------------
+==================================================
+TECH STACK
+==================================================
 
 Use:
-
 - Java 21
 - Spring Boot
 - Spring Web
@@ -116,65 +52,50 @@ Use Micrometer only if genuinely required.
 
 Avoid unnecessary dependencies.
 
---------------------------------------------------
-CLEAN CODE REQUIREMENTS
---------------------------------------------------
+==================================================
+ARCHITECTURE
+==================================================
 
-Follow clean code principles throughout implementation.
+Use same:
+- Maven/Gradle style
+- Docker style
+- Kubernetes style
+- application.yml conventions
+- actuator conventions
+- logging conventions
+- health check conventions
 
-Requirements:
+Do NOT redesign architecture.
 
-- Small focused classes
-- Small focused methods
-- Clear naming
-- No god classes
-- No unnecessary abstraction
-- No deep inheritance
-- Constructor injection only
-- Avoid utility classes unless genuinely reusable
-- Keep controller/service/client responsibilities clear
-- Keep DTOs explicit and minimal
-- Prefer readability over cleverness
+Assume:
+- Loki already stores logs
+- Prometheus already stores JVM metrics
 
---------------------------------------------------
-IMPORTANT IMPLEMENTATION RULES
---------------------------------------------------
+This service is only:
+- aggregation layer
+- query layer
+- MCP exposure layer
 
-Avoid overengineering.
-
-This service is intentionally a thin observability aggregation and MCP exposure layer.
-
-DO NOT introduce:
-
+Do NOT add:
+- DB
 - Kafka
-- Databases
 - Elasticsearch
-- Custom storage
+- custom storage
 - CQRS
-- Event sourcing
-- Plugin systems
-- Generic query engines
-- Complex domain modeling
-- Internal caching layers unless absolutely needed
-- Strategy/factory patterns unless repository already uses them
-- Reactive chains beyond simple WebClient usage
-- Multiple abstraction layers for simple logic
-- Authentication unless existing repo already has it
-- UI/frontend
+- event sourcing
+- plugin systems
+- caching layers unless required
+- generic query engines
+- frontend/UI
+- auth unless repo already uses it
 
-Keep implementation straightforward and maintainable.
+Prefer simple imperative code.
 
-Prefer simple imperative code over highly abstract functional/reactive pipelines.
-
-The code should be understandable by a normal Spring Boot developer without requiring advanced framework knowledge.
-
---------------------------------------------------
+==================================================
 PACKAGE STRUCTURE
---------------------------------------------------
+==================================================
 
-Use clean structure aligned with repository conventions.
-
-Expected minimum:
+Minimum:
 
 observability-agent
  ├── controller
@@ -184,33 +105,22 @@ observability-agent
  ├── config
  ├── mcp
  ├── exception
- └── util
 
---------------------------------------------------
-FUNCTIONAL APIS
---------------------------------------------------
+==================================================
+REST APIS
+==================================================
 
---------------------------------------------------
-API 1 — Logs By Request ID
---------------------------------------------------
-
-REST:
+1. Logs by Request ID
 
 GET /api/observability/logs/request/{requestId}
 
 Behavior:
+- Query Loki
+- Search logs containing requestId
+- Aggregate across services
+- Sort chronologically
 
-Return all logs across all microservices for a request ID.
-
-Query Strategy:
-
-Use Loki query.
-
-Search logs containing request ID.
-
-Aggregate and sort chronologically.
-
-Response Example:
+Response:
 
 {
   "requestId": "abc-123",
@@ -225,102 +135,68 @@ Response Example:
 }
 
 --------------------------------------------------
-API 2 — Logs By Service + Time Range
---------------------------------------------------
 
-REST:
+2. Logs by Service + Time Range
 
 GET /api/observability/logs/service/{serviceName}
 
-Query Params:
-
+Query params:
 - startTime
 - endTime
 
 Behavior:
-
-Return logs for a service within a given time range.
+- Return logs for service in time range
 
 --------------------------------------------------
-API 3 — Error Logs By Service + Time Range
---------------------------------------------------
 
-REST:
+3. Error Logs by Service + Time Range
 
 GET /api/observability/logs/errors/{serviceName}
 
-Query Params:
-
+Query params:
 - startTime
 - endTime
 
 Behavior:
+- Return ERROR/ERR logs for service in time range
 
-Return all error logs for the given service within the specified time range.
-
-Log Level Matching Rules:
-
-The implementation MUST include logs matching ANY of the following:
-
+Must match:
 - ERROR
 - ERR
 - error
 - err
 
-If Loki log entries contain structured JSON fields, prefer matching on:
-
+Prefer structured matching:
 - level=ERROR
 - severity=ERROR
 
-If structured fields are unavailable, fallback to text matching.
-
-Response Example:
-
-{
-  "service": "payment-service",
-  "logs": [
-    {
-      "timestamp": "2026-05-12T10:15:11Z",
-      "service": "payment-service",
-      "level": "ERROR",
-      "message": "Payment authorization failed"
-    }
-  ]
-}
+Fallback:
+- text matching
 
 --------------------------------------------------
-API 4 — Heap Metrics
---------------------------------------------------
 
-REST:
+4. Heap Metrics
 
 GET /api/observability/metrics/heap/{serviceName}
 
-Query Params:
-
+Query params:
 - startTime
 - endTime
-- stepSeconds (OPTIONAL)
+- stepSeconds (optional)
 
 Behavior:
+- Return heap datapoints
 
-Return heap usage datapoints for the given service within the specified time range.
+If stepSeconds absent:
+- return all available datapoints
 
-If stepSeconds is NOT provided:
+If stepSeconds present:
+- use Prometheus range query step
 
-- Return all available recorded heap datapoints between startTime and endTime.
-
-If stepSeconds IS provided:
-
-- Query Prometheus using the provided resolution step.
-
-Prometheus Metric:
-
+Metric:
 - jvm_memory_used_bytes
 
-Only heap-related data.
-
-Response Example:
+Response:
 
 {
   "service": "payment-service",
@@ -333,82 +209,51 @@ Response Example:
   ]
 }
 
-Validation Rules:
-
-If provided:
-
-- stepSeconds must be greater than 0
-- stepSeconds must have sane upper bounds
-
---------------------------------------------------
-API 5 — Thread Count Metrics
 --------------------------------------------------
 
-REST:
+5. Thread Metrics
 
 GET /api/observability/metrics/threads/{serviceName}
 
-Query Params:
-
+Query params:
 - startTime
 - endTime
-- stepSeconds (OPTIONAL)
+- stepSeconds (optional)
 
 Behavior:
+- Return thread datapoints
 
-Return thread count datapoints for the given service within the specified time range.
+If stepSeconds absent:
+- return all available datapoints
 
-If stepSeconds is NOT provided:
+If stepSeconds present:
+- use Prometheus range query step
 
-- Return all available recorded thread count datapoints between startTime and endTime.
-
-If stepSeconds IS provided:
-
-- Query Prometheus using the provided resolution step.
-
-Prometheus Metric:
-
+Metric:
 - jvm_threads_live_threads
 
-Validation Rules:
-
-If provided:
-
-- stepSeconds must be greater than 0
-- stepSeconds must have sane upper bounds
-
---------------------------------------------------
-API 6 — List Available Services
 --------------------------------------------------
 
-REST:
+6. Available Services
 
 GET /api/observability/services
 
-Behavior:
-
-Return services for which logs and metrics exist.
-
-Response Example:
+Response:
 
 {
   "services": [
     "order-service",
-    "payment-service",
-    "inventory-service"
+    "payment-service"
   ]
 }
 
---------------------------------------------------
+==================================================
 MCP REQUIREMENTS
---------------------------------------------------
+==================================================
 
-The service MUST expose MCP tools.
+Expose MCP tools for all APIs.
 
-Each REST API should also be exposed as MCP tools.
-
-Required tool names:
-
+Tool names:
 - get_logs_by_request_id
 - get_logs_by_service
 - get_error_logs_by_service
@@ -416,133 +261,88 @@ Required tool names:
 - get_thread_metrics
 - list_observable_services
 
-Each MCP tool must include:
-
-- clear description
-- strict parameter schema
+Each tool must have:
+- description
+- parameter schema
 - validation
-- useful examples
-- structured JSON responses
+- examples
+- structured JSON response
 
---------------------------------------------------
-MCP TOOL DETAILS
---------------------------------------------------
+==================================================
+CLIENTS
+==================================================
 
-get_error_logs_by_service
-
-Returns all ERROR/ERR logs for a given microservice within a specified time range.
-
-Supports:
-
-- structured log level matching
-- text-based fallback matching
-
-Required parameters:
-
-- serviceName
-- startTime
-- endTime
-
---------------------------------------------------
-LOKI INTEGRATION REQUIREMENTS
---------------------------------------------------
-
-Implement:
-
-LokiClient
+Create:
+- LokiClient
+- PrometheusClient
 
 Responsibilities:
+- query downstream systems
+- parse responses
+- map DTOs
+- timeout handling
+- error handling
 
-- Query Loki
-- Parse Loki response
-- Map logs to DTOs
-- Handle errors
-- Timeout handling
+Use:
+- configurable base URLs
+- WebClient
 
-Use configurable Loki base URL.
+No hardcoded URLs.
 
-DO NOT hardcode URLs.
-
-Use WebClient.
-
---------------------------------------------------
-PROMETHEUS INTEGRATION REQUIREMENTS
---------------------------------------------------
-
-Implement:
-
-PrometheusClient
-
-Responsibilities:
-
-- Query Prometheus range APIs
-- Parse metrics
-- Map datapoints
-- Handle failures
-- Timeout handling
-
-Use configurable Prometheus URL.
-
-Use WebClient.
-
---------------------------------------------------
-DTO REQUIREMENTS
---------------------------------------------------
+==================================================
+DTOs
+==================================================
 
 Create explicit DTOs.
 
-DO NOT return raw maps.
+Do not return raw maps.
 
 Examples:
-
 - LogEntryDto
 - LogsResponseDto
 - MetricPointDto
 - MetricsResponseDto
 - ServicesResponseDto
 
-Use Java records where appropriate.
+Use records where appropriate.
 
---------------------------------------------------
-VALIDATION REQUIREMENTS
---------------------------------------------------
+==================================================
+VALIDATION
+==================================================
 
 Validate:
-
+- ISO timestamps
 - startTime < endTime
-- timestamps are ISO-8601
-- service names are non-empty
+- serviceName non-empty
 - optional stepSeconds > 0
-- optional stepSeconds has sane upper bounds
+- sane upper bound for stepSeconds
 
---------------------------------------------------
-ERROR HANDLING REQUIREMENTS
---------------------------------------------------
+==================================================
+ERROR HANDLING
+==================================================
 
-Implement centralized exception handling.
+Centralized exception handling.
 
-Return proper HTTP status codes.
-
-Include handling for:
-
+Handle:
 - invalid timestamps
-- invalid range
+- invalid ranges
 - unknown service
-- downstream failure
-- timeout
 - missing serviceName
-- invalid optional stepSeconds
-- unsupported metric query parameters
-- malformed Loki responses
-- malformed Prometheus responses
+- invalid stepSeconds
+- Loki unavailable
+- Prometheus unavailable
+- malformed downstream responses
+- timeout failures
 
-Use structured error response DTOs.
+Use structured error DTOs.
 
---------------------------------------------------
-CONFIGURATION REQUIREMENTS
---------------------------------------------------
+==================================================
+CONFIG
+==================================================
 
-Add configuration for:
+Use @ConfigurationProperties.
+
+Config:
 
 observability:
   loki:
@@ -552,231 +352,103 @@ observability:
     base-url:
     timeout-seconds:
 
-Use @ConfigurationProperties.
-
---------------------------------------------------
-ACTUATOR REQUIREMENTS
---------------------------------------------------
+==================================================
+ACTUATOR
+==================================================
 
 Enable:
-
 - health
 - info
 - prometheus
 
---------------------------------------------------
-LOGGING REQUIREMENTS
---------------------------------------------------
+==================================================
+LOGGING
+==================================================
 
 Use structured logs.
 
-Include:
-
-- requestId when available
-- service name
+Include when available:
+- requestId
+- serviceName
 - error details
 
---------------------------------------------------
-KUBERNETES REQUIREMENTS
---------------------------------------------------
+==================================================
+KUBERNETES
+==================================================
 
-Create Kubernetes manifests consistent with repository style.
-
-Must include:
-
+Create manifests matching repository conventions:
 - deployment.yaml
 - service.yaml
-- configmap.yaml if repo convention uses it
+- configmap.yaml if repo uses it
 
-Reuse existing patterns.
+Do not introduce Helm unless repo already uses Helm.
 
-DO NOT introduce Helm unless repository already uses Helm.
+==================================================
+DOCKER
+==================================================
 
---------------------------------------------------
-DOCKER REQUIREMENTS
---------------------------------------------------
+Create Dockerfile matching repo conventions.
 
-Create Dockerfile consistent with repository conventions.
+==================================================
+TESTS
+==================================================
 
---------------------------------------------------
-TESTING REQUIREMENTS
---------------------------------------------------
-
-Create unit tests covering:
-
-- Loki response parsing
-- Prometheus response parsing
+Unit tests:
+- Loki parsing
+- Prometheus parsing
 - validation
 - service layer
 - controller layer
 
-Create integration tests using mocked downstream APIs.
-
-Validate:
-
-- API contracts
-- JSON structure
+Integration tests:
+- mocked Loki
+- mocked Prometheus
+- API contract validation
 - error handling
 
---------------------------------------------------
-MCP VALIDATION REQUIREMENTS
---------------------------------------------------
+==================================================
+MCP VALIDATION
+==================================================
 
 Validate:
+- MCP startup
+- tool registration
+- tool execution
+- schema validation
 
-- MCP server startup
-- MCP tool registration
-- MCP tool execution
-- MCP parameter validation
-- MCP response structure
+==================================================
+FINAL VALIDATION
+==================================================
 
---------------------------------------------------
-REQUIRED DOCUMENTATION
---------------------------------------------------
-
-Create:
-
-- README.md
-- API examples
-- MCP tool examples
-- Local run instructions
-- Kubernetes deployment instructions
-
---------------------------------------------------
-REQUIRED VALIDATION STEPS
---------------------------------------------------
-
-You MUST validate all of the following before completion.
-
---------------------------------------------------
-VALIDATION 1 — BUILD
---------------------------------------------------
+Must validate:
+1. Build passes
+2. Docker build passes
+3. K8s YAML valid
+4. REST APIs work
+5. MCP tools work
+6. Error handling works
+7. Optional stepSeconds behavior works
+8. No dead code
+9. No TODOs
+10. No hardcoded URLs
 
 Run:
-
 ./mvnw clean test
+(or repo equivalent)
 
-OR repository equivalent.
+==================================================
+FINAL OUTPUT
+==================================================
 
-Build must succeed.
-
---------------------------------------------------
-VALIDATION 2 — DOCKER
---------------------------------------------------
-
-Build Docker image successfully.
-
---------------------------------------------------
-VALIDATION 3 — KUBERNETES YAML
---------------------------------------------------
-
-Validate manifests are syntactically correct.
-
---------------------------------------------------
-VALIDATION 4 — REST APIS
---------------------------------------------------
-
-Test all endpoints.
-
-Verify JSON responses exactly match DTOs.
-
---------------------------------------------------
-VALIDATION 5 — LOKI INTEGRATION
---------------------------------------------------
-
-Mock Loki response.
-
-Verify:
-
-- parsing works
-- chronological sorting works
-- error filtering works
-
---------------------------------------------------
-VALIDATION 6 — PROMETHEUS INTEGRATION
---------------------------------------------------
-
-Mock Prometheus range query responses.
-
-Verify:
-
-- datapoint mapping
-- optional stepSeconds behavior
-- metrics parsing
-
---------------------------------------------------
-VALIDATION 7 — OPTIONAL stepSeconds
---------------------------------------------------
-
-Validate both cases.
-
-Case 1:
-
-Without stepSeconds:
-
-- all available datapoints are returned
-
-Case 2:
-
-With stepSeconds:
-
-- Prometheus query uses requested resolution
-
---------------------------------------------------
-VALIDATION 8 — MCP TOOLS
---------------------------------------------------
-
-Verify:
-
-- all tools appear
-- tool execution works
-- schema correctness
-- validation behavior
-
---------------------------------------------------
-VALIDATION 9 — ERROR HANDLING
---------------------------------------------------
-
-Verify:
-
-- invalid timestamps
-- missing params
-- Loki unavailable
-- Prometheus unavailable
-- malformed responses
-- invalid stepSeconds
-
---------------------------------------------------
-VALIDATION 10 — CODE QUALITY
---------------------------------------------------
-
-Verify:
-
-- No unused classes
-- No dead code
-- No TODOs
-- No hardcoded URLs
-- No duplicated logic
-- No commented code
-
---------------------------------------------------
-FINAL OUTPUT REQUIREMENTS
---------------------------------------------------
-
-At the end provide:
-
-1. High level architecture summary
-2. List of created files
+Provide:
+1. Architecture summary
+2. Files created
 3. REST API summary
 4. MCP tools summary
-5. Example curl commands
-6. Example MCP requests
-7. Kubernetes deployment steps
-8. Assumptions made
-9. Any limitations
+5. curl examples
+6. MCP examples
+7. K8s deployment steps
+8. Assumptions
+9. Limitations
 
-Do NOT skip validation steps.
-
-Do NOT leave partial implementation.
-
-The generated code must compile successfully.
+Generated code must compile successfully.
