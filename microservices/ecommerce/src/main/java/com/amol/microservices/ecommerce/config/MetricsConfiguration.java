@@ -22,6 +22,9 @@ public class MetricsConfiguration {
                 if ("jvm.threads.live".equals(name) || "jvm.gc.pause".equals(name)) {
                     return MeterFilterReply.NEUTRAL;
                 }
+                if ("http.server.requests".equals(name)) {
+                    return MeterFilterReply.NEUTRAL;
+                }
                 return MeterFilterReply.DENY;
             }
         };

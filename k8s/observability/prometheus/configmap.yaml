@@ -25,7 +25,7 @@ data:
             regex: jvm_memory_(used|max)_bytes;heap
             action: keep
           - source_labels: [__name__]
-            regex: jvm_threads_live_threads|jvm_gc_pause_seconds_(count|sum|max)
+            regex: jvm_threads_live_threads|jvm_gc_pause_seconds_(count|sum|max)|http_server_requests_seconds_count
             action: keep
           - action: drop
             regex: .*
@@ -48,7 +48,7 @@ data:
             regex: jvm_memory_(used|max)_bytes;heap
             action: keep
           - source_labels: [__name__]
-            regex: jvm_threads_live_threads|jvm_gc_pause_seconds_(count|sum|max)
+            regex: jvm_threads_live_threads|jvm_gc_pause_seconds_(count|sum|max)|http_server_requests_seconds_count
             action: keep
           - action: drop
             regex: .*
@@ -71,7 +71,7 @@ data:
             regex: jvm_memory_(used|max)_bytes;heap
             action: keep
           - source_labels: [__name__]
-            regex: jvm_threads_live_threads|jvm_gc_pause_seconds_(count|sum|max)
+            regex: jvm_threads_live_threads|jvm_gc_pause_seconds_(count|sum|max)|http_server_requests_seconds_count
             action: keep
           - action: drop
             regex: .*

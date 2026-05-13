@@ -6,13 +6,11 @@ import com.amol.microservices.observability.dto.MetricsResponseDto;
 import com.amol.microservices.observability.dto.ServicesResponseDto;
 import com.amol.microservices.observability.service.ObservabilityService;
 import jakarta.validation.constraints.NotBlank;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/observability")
@@ -83,10 +81,22 @@ public class ObservabilityController {
         return ResponseEntity.ok(resp);
     }
 
+    @GetMapping("/metrics/request-rate/{serviceName}")
+    public ResponseEntity<MetricsResponseDto> requestRateMetrics(@PathVariable @NotBlank String serviceName,
+                                                                 @RequestParam(required = false) String startTime,
+                                                                 @RequestParam(required = false) String endTime,
+                                                                 @RequestParam(required = false) Integer stepSeconds) {
+        Instant start = parseOrNull(startTime);
+        Instant end = parseOrNull(endTime);
+        validateRange(start, end);
+        if (stepSeconds != null && stepSeconds <= 0) throw new IllegalArgumentException("stepSeconds must be > 0");
+        MetricsResponseDto resp = service.getRequestRateMetrics(serviceName, start, end, stepSeconds);
+        return ResponseEntity.ok(resp);
+    }
+
     @GetMapping("/services")
     public ResponseEntity<ServicesResponseDto> services() {
-        // Minimal discovery - in real world query k8s or service registry
-        ServicesResponseDto resp = new ServicesResponseDto(List.of("product-service","images-service","ecommerce-service"));
+        ServicesResponseDto resp = service.listObservableServices();
         return ResponseEntity.ok(resp);
     }
 

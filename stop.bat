@@ -20,8 +20,8 @@ kubectl delete -f "%ROOT_DIR%\k8s\images" --ignore-not-found
 kubectl delete -f "%ROOT_DIR%\k8s\product" --ignore-not-found
 
 echo [4/4] Current namespace status...
-kubectl get pods -n ecommerce
-kubectl get pods -n observability
+kubectl get pods -n ecommerce --ignore-not-found
+kubectl get pods -n observability --ignore-not-found
 
 echo.
 echo Shutdown complete.
