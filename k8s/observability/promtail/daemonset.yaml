@@ -23,6 +23,8 @@ spec:
               mountPath: /etc/promtail
             - name: run
               mountPath: /run/promtail
+            - name: generated-logs
+              mountPath: /generated-logs
             - name: pods
               mountPath: /var/log/pods
               readOnly: true
@@ -41,6 +43,8 @@ spec:
           hostPath:
             path: /run/promtail
             type: DirectoryOrCreate
+        - name: generated-logs
+          emptyDir: {}
         - name: pods
           hostPath:
             path: /var/log/pods

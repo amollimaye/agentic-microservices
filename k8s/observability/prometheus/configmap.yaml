@@ -8,6 +8,22 @@ data:
     global:
       scrape_interval: 15s
     scrape_configs:
+      - job_name: generated-ecommerce
+        static_configs:
+          - targets: ["host.docker.internal:9105"]
+        metrics_path: /ecommerce.prom
+      - job_name: generated-product
+        static_configs:
+          - targets: ["host.docker.internal:9105"]
+        metrics_path: /product.prom
+      - job_name: generated-images
+        static_configs:
+          - targets: ["host.docker.internal:9105"]
+        metrics_path: /images.prom
+      - job_name: generated-observability-agent
+        static_configs:
+          - targets: ["host.docker.internal:9105"]
+        metrics_path: /observability-agent.prom
       - job_name: ecommerce
         kubernetes_sd_configs:
           - role: endpoints

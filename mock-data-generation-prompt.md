@@ -101,11 +101,16 @@ Section 2: `PROMETHEUS_METRICS`
 - include all required metric names
 - use valid labels and timestamps
 - keep counters cumulative
+- use Unix timestamps in milliseconds
+- use `# TYPE ...` headers before metric samples
+- end the section with `# EOF`
+- use LF line endings only
 - do not add explanatory prose inside this section
 
 Section 3: `LOKI_LOGS`
 - output JSON log lines only
 - one log event per line
+- keep timestamps as full ISO-8601 UTC strings
 - do not add commentary inside this section
 
 Additional generation rules:
@@ -118,4 +123,6 @@ Additional generation rules:
 - Prefer fewer high-quality correlated logs over noisy random logs.
 - Make the dataset realistic enough that Grafana charts for heap, threads, GC activity, and request rate look believable.
 - Do not invent new APIs, services, or metric names.
+- Do not include markdown code fences.
+- Do not include CRLF-specific formatting.
 - Do not output code, scripts, tutorials, or explanations outside the 3 required sections.

@@ -41,3 +41,33 @@ data:
             separator: /
             source_labels: [__meta_kubernetes_pod_uid, __meta_kubernetes_pod_container_name]
             target_label: __path__
+      - job_name: generated-log-files
+        static_configs:
+          - targets: [localhost]
+            labels:
+              job: generated-logs
+              namespace: ecommerce
+              app: ecommerce
+              service: ecommerce
+              __path__: /generated-logs/ecommerce.log
+          - targets: [localhost]
+            labels:
+              job: generated-logs
+              namespace: ecommerce
+              app: product
+              service: product
+              __path__: /generated-logs/product.log
+          - targets: [localhost]
+            labels:
+              job: generated-logs
+              namespace: ecommerce
+              app: images
+              service: images
+              __path__: /generated-logs/images.log
+          - targets: [localhost]
+            labels:
+              job: generated-logs
+              namespace: observability-agent
+              app: observability-agent
+              service: observability-agent
+              __path__: /generated-logs/observability-agent.log
