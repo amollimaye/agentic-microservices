@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-* Java 17
+* Java 21
 * Maven
 * Docker Desktop
 * Kubernetes enabled in Docker Desktop
@@ -25,10 +25,13 @@ stop.bat
 ## URLs
 
 * App: `http://localhost:8090/ecommerce-service/ecommerceProducts`
+* Ecommerce Actuator: `http://localhost:8090/ecommerce-service/actuator`
+* Ecommerce Prometheus: `http://localhost:8090/ecommerce-service/actuator/prometheus`
 * Prometheus: `http://localhost:9090`
 * Grafana: `http://localhost:3000`
 
 ## Notes
 
-* `start.bat` builds `observability-agent`, `product`, `images`, and `ecommerce`
-* Observability includes logs, JVM metrics, and request-rate metrics
+* `start.bat` rebuilds and deploys fresh timestamp-tagged images for `product`, `images`, and `ecommerce`
+* Observability includes Loki logs, Prometheus JVM metrics, and request-rate metrics
+* View logs in Grafana from `Explore` using datasource `Loki`
